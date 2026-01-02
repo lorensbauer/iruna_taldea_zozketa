@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sorteo Iruña Taldea</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header img {
+            max-height: 120px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        main {
+            padding: 30px;
+        }
+
+        .config {
+            background: white;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .config label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .config input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background: #c62828;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        button:hover {
+            background: #a91f1f;
+        }
+
+        .resultados {
+            background: white;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .resultados h2 {
+            margin-top: 0;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            font-size: 24px;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <!-- Sustituye logo.png por tu logo -->
+    <img src="ITlogoa.png" alt="Iruña Taldea">
+    <h1>Iruña taldeko errigorako saskiaren zozketa</h1>
+</header>
+
+<main>
+
+    <div class="config">
+        <label for="numPremios">Sari kopurua</label>
+        <input type="number" id="numPremios" min="1" value="3">
+
+        <label for="maxBoleto">Boleto kopurua</label>
+        <input type="number" id="maxBoleto" min="1" value="300">
+
+        <button onclick="realizarSorteo()">Zozketa egin</button>
+    </div>
+
+    <div class="resultados">
+        <h2>Zenbaki sarituak</h2>
+        <ul id="listaResultados"></ul>
+    </div>
+
+</main>
+
+<script>
+    function realizarSorteo() {
+        const numPremios = parseInt(document.getElementById('numPremios').value);
+        const maxBoleto = parseInt(document.getElementById('maxBoleto').value);
+        const lista = document.getElementById('listaResultados');
+
+        lista.innerHTML = '';
+
+        if (numPremios > maxBoleto) {
+            alert('Sarien kopurua ezin da boletoen kopurua baino handiagoa izan.');
+            return;
+        }
+
+        const boletos = [];
+        for (let i = 1; i <= maxBoleto; i++) {
+            boletos.push(i);
+        }
+
+        // Fisher-Yates shuffle
+        for (let i = boletos.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [boletos[i], boletos[j]] = [boletos[j], boletos[i]];
+        }
+
+        const ganadores = boletos.slice(0, numPremios);
+
+        ganadores.forEach((numero, index) => {
+            const li = document.createElement('li');
+            li.textContent = `${index + 1}. saria: ${numero}`;
+            lista.appendChild(li);
+        });
+    }
+</script>
+
+</body>
+</html>
