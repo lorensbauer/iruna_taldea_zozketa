@@ -3,50 +3,64 @@
 <head>
     <meta charset="UTF-8" />
     <title>Sorteo Iruña Taldea</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f5f5f5;
             margin: 0;
-            padding: 0;
             text-align: center;
         }
 
         header {
             background: white;
-            padding: 20px;
+            padding: 8px 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
         }
 
         header img {
-            max-height: 120px;
-            margin-bottom: 10px;
+            max-height: 100px;   /* logo un poco más grande */
+            width: auto;
         }
 
-        h1 {
+        header h1 {
             margin: 0;
+            font-size: 26px;
+            line-height: 1.1;
         }
 
         main {
             padding: 30px;
         }
 
-        .config {
+        .config, .resultados {
             background: white;
             padding: 20px;
             max-width: 400px;
             margin: 0 auto 30px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column; /* apilados verticalmente */
+            align-items: center;
         }
 
-        .config label {
+        label {
             display: block;
             margin-top: 15px;
             font-weight: bold;
         }
 
-        .config input {
+        input {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -64,21 +78,22 @@
             border-radius: 6px;
         }
 
-        button:hover {
-            background: #a91f1f;
+        button:disabled {
+            background: #aaa;
+            cursor: not-allowed;
         }
 
-        .resultados {
-            background: white;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .resultados h2 {
-            margin-top: 0;
+        /* ===== RULETA ===== */
+        .ruleta {
+            font-size: 64px;
+            font-weight: bold;
+            height: 80px;
+            line-height: 80px;
+            border: 4px solid #c62828;
+            border-radius: 10px;
+            background: #fff;
+            max-width: 400px;
+            margin: 0 auto 30px;
         }
 
         ul {
@@ -87,8 +102,8 @@
         }
 
         li {
-            font-size: 24px;
-            padding: 8px;
+            font-size: 22px;
+            padding: 6px;
             border-bottom: 1px solid #ddd;
         }
 
@@ -101,62 +116,195 @@
 <body>
 
 <header>
-    <!-- Sustituye logo.png por tu logo -->
     <img src="ITlogoa.png" alt="Iruña Taldea">
-    <h1>Iruña taldeko errigorako saskiaren zozketa</h1>
+    <h1>Iruña taldeko zozketa</h1>
 </header>
 
 <main>
+    <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
 
     <div class="config">
         <label for="numPremios">Sari kopurua</label>
-        <input type="number" id="numPremios" min="1" value="3">
+        <input type="number" id="numPremios" value="2" min="1">
 
-        <label for="maxBoleto">Boleto kopurua</label>
-        <input type="number" id="maxBoleto" min="1" value="300">
+        <label for="maxBoleto">Saldutako boleto kopurua</label>
+        <input type="number" id="maxBoleto" value="300" min="1">
 
-        <button onclick="realizarSorteo()">Zozketa egin</button>
+        <button id="btnSorteo" onclick="iniciarSorteo()">Hasi zozketa</button>
+        <button id="btnEmpezar" onclick="empezarDeCero()">Hasi berriz</button>
     </div>
 
+    <div class="ruleta" id="ruleta">—</div>
+
     <div class="resultados">
-        <h2>Zenbaki sarituak</h2>
+        <h2>Saritutako zenbakiak</h2>
         <ul id="listaResultados"></ul>
     </div>
 
 </main>
 
 <script>
-    function realizarSorteo() {
-        const numPremios = parseInt(document.getElementById('numPremios').value);
-        const maxBoleto = parseInt(document.getElementById('maxBoleto').value);
-        const lista = document.getElementById('listaResultados');
+    let boletos = [];
+    let premiosRestantes = 0;
+    let premioActual = 1;
+    let girando = false;
 
-        lista.innerHTML = '';
+    function iniciarSorteo() {
+        if (girando) return;
 
-        if (numPremios > maxBoleto) {
-            alert('Sarien kopurua ezin da boletoen kopurua baino handiagoa izan.');
+        if (boletos.length === 0 && premiosRestantes === 0) {
+            const maxBoleto = parseInt(document.getElementById('maxBoleto').value);
+            premiosRestantes = parseInt(document.getElementById('numPremios').value);
+            premioActual = premiosRestantes;
+            actualizarTextoBoton();
+
+            if (premiosRestantes > maxBoleto) {
+                alert('Boleto baino sari gehiago.');
+                return;
+            }
+
+            boletos = Array.from({ length: maxBoleto }, (_, i) => i + 1);
+            barajar(boletos);
+        }
+
+        if (premiosRestantes <= 0) {
+            alert('Zozketa amaitua');
             return;
         }
 
-        const boletos = [];
-        for (let i = 1; i <= maxBoleto; i++) {
-            boletos.push(i);
-        }
+        const ganador = boletos.pop();
+        premiosRestantes--;
 
-        // Fisher-Yates shuffle
-        for (let i = boletos.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [boletos[i], boletos[j]] = [boletos[j], boletos[i]];
-        }
-
-        const ganadores = boletos.slice(0, numPremios);
-
-        ganadores.forEach((numero, index) => {
-            const li = document.createElement('li');
-            li.textContent = `${index + 1}. saria: ${numero}`;
-            lista.appendChild(li);
-        });
+        animarRuleta(ganador);
     }
+
+    function empezarDeCero() {
+        boletos = [];
+        premiosRestantes = 0;
+        premioActual = 1;
+        girando = false;
+
+        document.getElementById('ruleta').textContent = '—';
+        document.getElementById('listaResultados').innerHTML = '';
+        document.getElementById('btnSorteo').textContent = 'Hasi zozketa';
+        document.getElementById('btnSorteo').disabled = false;
+    }
+
+    function barajar(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function animarRuleta(numeroFinal) {
+        const ruleta = document.getElementById('ruleta');
+        const boton = document.getElementById('btnSorteo');
+        girando = true;
+        boton.disabled = true;
+
+        let contador = 0;
+        const duracion = 2500;
+        const intervalo = 50;
+        const totalPasos = duracion / intervalo;
+        const maxBoleto = parseInt(document.getElementById('maxBoleto').value);
+        const animacion = setInterval(() => {
+            const numeroAleatorio = Math.floor(Math.random() * maxBoleto) + 1;
+            ruleta.textContent = numeroAleatorio;
+            contador++;
+
+            if (contador >= totalPasos) {
+                clearInterval(animacion);
+                ruleta.textContent = numeroFinal;
+
+                mostrarResultado(numeroFinal);
+                girando = false;
+                boton.disabled = false;
+            }
+        }, intervalo);
+    }
+
+    function mostrarResultado(numero) {
+        const lista = document.getElementById('listaResultados');
+        const li = document.createElement('li');
+        li.textContent = `${premioActual}. saria: ${numero}`;
+        lista.appendChild(li);
+        if(premioActual === 1) {
+            lanzarConfeti();
+        }
+        premioActual--;
+        actualizarTextoBoton();
+    }
+
+    function actualizarTextoBoton() {
+        const boton = document.getElementById('btnSorteo');
+
+        if (premioActual > 0) {
+            boton.textContent = `${premioActual}. irabazlea`;
+            boton.disabled = false;
+        } else {
+            boton.textContent = 'Zozketa amaitua';
+            boton.disabled = true;
+        }
+    }
+
+    function lanzarConfeti() {
+        const canvas = document.getElementById('confettiCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const confeti = [];
+        const colors = ['#e63946','#f1faee','#a8dadc','#457b9d','#f4a261'];
+
+        for (let i = 0; i < 150; i++) {
+            confeti.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                r: Math.random() * 6 + 4,
+                d: Math.random() * 40 + 10,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                tilt: Math.random() * 10 - 10,
+                tiltAngleIncrement: Math.random() * 0.07 + 0.05,
+                tiltAngle: 0
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confeti.forEach(c => {
+                ctx.beginPath();
+                ctx.lineWidth = c.r / 2;
+                ctx.strokeStyle = c.color;
+                ctx.moveTo(c.x + c.tilt + c.r / 4, c.y);
+                ctx.lineTo(c.x + c.tilt, c.y + c.tilt + c.r / 4);
+                ctx.stroke();
+            });
+            update();
+        }
+
+        function update() {
+            confeti.forEach(c => {
+                c.tiltAngle += c.tiltAngleIncrement;
+                c.y += (Math.cos(c.d) + 3 + c.r / 2) / 2;
+                c.tilt = Math.sin(c.tiltAngle) * 15;
+
+                if (c.y > canvas.height) {
+                    c.y = -10;
+                    c.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        const anim = setInterval(draw, 20);
+
+        // Para después de 3 segundos
+        setTimeout(() => {
+            clearInterval(anim);
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+        }, 3000);
+    }
+
 </script>
 
 </body>
