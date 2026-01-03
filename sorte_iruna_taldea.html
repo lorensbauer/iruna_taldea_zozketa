@@ -114,7 +114,7 @@
 </head>
 
 <body>
-
+<audio id="audioTambor" src="redoble.mp3" preload="auto"></audio>
 <header>
     <img src="ITlogoa.png" alt="Iruña Taldea">
     <h1>Iruña taldeko zozketa</h1>
@@ -175,6 +175,7 @@
         const ganador = boletos.pop();
         premiosRestantes--;
 
+
         animarRuleta(ganador);
     }
 
@@ -200,11 +201,15 @@
     function animarRuleta(numeroFinal) {
         const ruleta = document.getElementById('ruleta');
         const boton = document.getElementById('btnSorteo');
+        const audio = document.getElementById('audioTambor');
         girando = true;
         boton.disabled = true;
 
+        audio.currentTime = 0; // empieza desde el principio
+        audio.play();
+
         let contador = 0;
-        const duracion = 2500;
+        const duracion = 2000;
         const intervalo = 50;
         const totalPasos = duracion / intervalo;
         const maxBoleto = parseInt(document.getElementById('maxBoleto').value);
@@ -215,11 +220,12 @@
 
             if (contador >= totalPasos) {
                 clearInterval(animacion);
-                ruleta.textContent = numeroFinal;
-
-                mostrarResultado(numeroFinal);
-                girando = false;
-                boton.disabled = false;
+                audio.onended = () => {
+                    ruleta.textContent = numeroFinal;
+                    mostrarResultado(numeroFinal);
+                    girando = false;
+                    boton.disabled = false;
+                };
             }
         }, intervalo);
     }
